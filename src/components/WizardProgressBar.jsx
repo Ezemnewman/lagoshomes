@@ -1,22 +1,22 @@
 /**
- * Shared progress header for all 3 agent application steps. Takes
- * `step` (1-3) and `label` (e.g. "Basic Info") since each Stitch export
- * showed a different label next to the same progress bar shape.
+ * Generic progress bar for multi-step wizards. Used by both the
+ * agent application (3 steps) and the add-listing wizard (4 steps).
+ * `currentStep` is 1-indexed.
  */
-export default function WizardProgressBar({ step, label, totalSteps = 3 }) {
-  const percent = (step / totalSteps) * 100;
+export default function WizardProgressBar({ currentStep, totalSteps }) {
+  const percent = Math.round((currentStep / totalSteps) * 100);
 
   return (
-    <div className="mb-10">
-      <div className="flex justify-between items-end mb-4">
-        <span className="text-label-md font-label-md text-primary font-bold">
-          Step {step} of {totalSteps}
+    <div className="mb-stack-lg">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-label-md text-label-md text-on-surface-variant">
+          Step {currentStep} of {totalSteps}
         </span>
-        <span className="text-label-md font-label-md text-on-surface-variant">{label}</span>
+        <span className="font-label-md text-label-md text-primary font-bold">{percent}%</span>
       </div>
-      <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+      <div className="w-full bg-surface-container-high rounded-full h-2">
         <div
-          className="bg-primary h-full rounded-full transition-all duration-700 ease-out"
+          className="bg-primary h-2 rounded-full transition-all duration-500"
           style={{ width: `${percent}%` }}
         />
       </div>

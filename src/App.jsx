@@ -29,6 +29,27 @@ import { AgentApplicationProvider } from "./context/AgentApplicationContext";
 import AgentDashboardLayout from "./components/AgentDashboardLayout";
 import AgentDashboardOverviewPage from "./pages/AgentDashboardOverviewPage";
 
+// --- ADD LISTING WIZARD IMPORTS ---
+import AddListingStep1Page from "./pages/AddListingStep1Page"; //[cite: 1]
+import AddListingStep2Page from "./pages/AddListingStep2Page"; //[cite: 1]
+import AddListingStep3Page from "./pages/AddListingStep3Page"; //[cite: 1]
+import AddListingStep4Page from "./pages/AddListingStep4Page"; //[cite: 1]
+import { AddListingProvider } from "./context/AddListingContext"; //[cite: 1]
+
+// --- AGENT PORTAL IMPORTS ---
+import MyListingsPage from "./pages/MyListingsPage"; //[cite: 1]
+import AgentMessagesPage from "./pages/AgentMessagesPage"; //[cite: 1]
+import SubscriptionPage from "./pages/SubscriptionPage"; //[cite: 1]
+
+// --- SUPER ADMIN PORTAL IMPORTS ---
+import AdminLayout from "./components/AdminLayout"; //[cite: 1]
+import AdminDashboardPage from "./pages/AdminDashboardPage"; //[cite: 1]
+import AdminAgentsPage from "./pages/AdminAgentsPage"; //[cite: 1]
+import AdminListingsPage from "./pages/AdminListingsPage"; //[cite: 1]
+import AdminReportsPage from "./pages/AdminReportsPage"; //[cite: 1]
+import AdminMonetizationPage from "./pages/AdminMonetizationPage"; //[cite: 1]
+import AdminSiteSettingsPage from "./pages/AdminSiteSettingsPage"; //[cite: 1]
+
 /**
  * Real routing, replacing the temporary dev-only page switcher.
  * Buy/Rent/Shortlet/Land all currently point at SearchResultsPage —
@@ -47,6 +68,7 @@ import AgentDashboardOverviewPage from "./pages/AgentDashboardOverviewPage";
  * regardless of where it's listed. Kept it above /agents/:id anyway
  * for readability, not correctness.
  */
+
 export default function App() {
   return (
     <Routes>
@@ -55,9 +77,12 @@ export default function App() {
       <Route path="/rent" element={<SearchResultsPage />} />
       <Route path="/shortlet" element={<SearchResultsPage />} />
       <Route path="/land" element={<SearchResultsPage />} />
+      
       <Route path="/listing/:id" element={<PropertyDetailPage />} />
       <Route path="/listing/:id/report" element={<ReportListingPage />} />
       <Route path="/agents/:id" element={<AgentProfilePage />} />
+
+      {/* Agent Application Wizard */}
       <Route
         path="/agents/apply"
         element={
@@ -71,24 +96,58 @@ export default function App() {
         <Route path="documents" element={<AgentApplicationStep3Page />} />
       </Route>
       <Route path="/agents/apply/review" element={<AgentApplicationReviewPage />} />
+
+      {/* Agent Dashboard Portal */}
       <Route path="/agent-dashboard" element={<AgentDashboardLayout />}>
         <Route index element={<AgentDashboardOverviewPage />} />
-        {/* verifications, listings, messages, settings routes will slot in
-            here once those screens exist — AgentDashboardSidebar already
-            links to all five */}
+        
+        {/* Manage Listings Main View */}
+        <Route path="listings" element={<MyListingsPage />} /> {/*[cite: 1] */}
+
+        {/* Nested Add-Listing Wizard wrapped in Context Provider */}
+        <Route
+          path="listings/new"
+          element={
+            <AddListingProvider>
+              <Outlet />
+            </AddListingProvider>
+          }
+        > {/*[cite: 1] */}
+          <Route index element={<AddListingStep1Page />} /> {/*[cite: 1] */}
+          <Route path="details" element={<AddListingStep2Page />} /> {/*[cite: 1] */}
+          <Route path="price" element={<AddListingStep3Page />} /> {/*[cite: 1] */}
+          <Route path="media" element={<AddListingStep4Page />} /> {/*[cite: 1] */}
+        </Route>
+
+        <Route path="messages" element={<AgentMessagesPage />} /> {/*[cite: 1] */}
+        <Route path="subscription" element={<SubscriptionPage />} /> {/*[cite: 1] */}
       </Route>
+
+      {/* User Dashboard Portal */}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverviewPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="messages" element={<MessagesPage />} />
-        {/* settings route will slot in here once that screen exists */}
       </Route>
+
+      {/* Super Admin Portal */}
+      <Route path="/admin" element={<AdminLayout />}> {/*[cite: 1] */}
+        <Route index element={<AdminDashboardPage />} /> {/*[cite: 1] */}
+        <Route path="agents" element={<AdminAgentsPage />} /> {/*[cite: 1] */}
+        <Route path="listings" element={<AdminListingsPage />} /> {/*[cite: 1] */}
+        <Route path="reports" element={<AdminReportsPage />} /> {/*[cite: 1] */}
+        <Route path="monetization" element={<AdminMonetizationPage />} /> {/*[cite: 1] */}
+        <Route path="settings" element={<AdminSiteSettingsPage />} /> {/*[cite: 1] */}
+      </Route>
+
+      {/* Auth & Static Info Routes */}
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-phone" element={<VerifyPhonePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      
       <Route path="/about" element={<AboutPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />

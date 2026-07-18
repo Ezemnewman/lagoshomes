@@ -53,7 +53,6 @@ import AdminSiteSettingsPage from "./pages/AdminSiteSettingsPage";
 export default function App() {
   return (
     <Routes>
-      {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/buy" element={<SearchResultsPage />} />
       <Route path="/rent" element={<SearchResultsPage />} />
@@ -63,15 +62,11 @@ export default function App() {
       <Route path="/listing/:id" element={<PropertyDetailPage />} />
       <Route path="/listing/:id/report" element={<ReportListingPage />} />
       <Route path="/agents/:id" element={<AgentProfilePage />} />
-
-      {/* Auth flow */}
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-phone" element={<VerifyPhonePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-      {/* Static content pages */}
       <Route path="/about" element={<AboutPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
@@ -79,8 +74,6 @@ export default function App() {
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/help" element={<HelpCenterPage />} />
       <Route path="/careers" element={<CareersPage />} />
-
-      {/* Agent application wizard */}
       <Route
         path="/agents/apply"
         element={
@@ -94,8 +87,6 @@ export default function App() {
         <Route path="documents" element={<AgentApplicationStep3Page />} />
       </Route>
       <Route path="/agents/apply/review" element={<AgentApplicationReviewPage />} />
-
-      {/* Buyer Dashboard */}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverviewPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
@@ -104,8 +95,6 @@ export default function App() {
         <Route path="messages" element={<MessagesPage />} />
         <Route path="settings" element={<BuyerProfileSettingsPage />} />
       </Route>
-
-      {/* Agent Dashboard */}
       <Route path="/agent-dashboard" element={<AgentDashboardLayout />}>
         <Route index element={<AgentDashboardOverviewPage />} />
         <Route path="listings" element={<MyListingsPage />} />
@@ -127,8 +116,6 @@ export default function App() {
         <Route path="subscription/confirmation" element={<SubscriptionConfirmationPage />} />
         <Route path="settings" element={<AgentProfileSettingsPage />} />
       </Route>
-
-      {/* Super Admin Portal */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboardPage />} />
         <Route path="agents" element={<AdminAgentsPage />} />
@@ -137,8 +124,6 @@ export default function App() {
         <Route path="monetization" element={<AdminMonetizationPage />} />
         <Route path="settings" element={<AdminSiteSettingsPage />} />
       </Route>
-
-      {/* 404 — must be last */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

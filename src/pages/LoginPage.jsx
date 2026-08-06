@@ -1,96 +1,92 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthHeader from "../components/AuthHeader";
 import AuthFooter from "../components/AuthFooter";
-import GoogleSignInButton from "../components/GoogleSignInButton";
-import FacebookSignInButton from "../components/FacebookSignInButton";
 import LoadingButton from "../components/LoadingButton";
+import Icon from "../components/Icon";
+import { useAuth } from "../context/AuthContext";
 
-/**
- * Mirrors SignupPage's structure (same AuthHeader/AuthFooter shell,
- * same social buttons) since login and signup are the same category
- * of page — visitors bounce between them via the links at the bottom
- * of each.
- *
- * The Stitch export's "Signing in..." spinner was a raw setTimeout in
- * a <script> tag with manual innerHTML swapping. Here it's real React
- * state driving the new LoadingButton component. The 1.5s delay is
- * fake — there's no backend to actually wait on yet — but the UI
- * pattern itself (disable + spinner + label swap while a request is
- * in flight) is exactly what a real login request will need, so
- * building it now isn't wasted work.
- */
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ identity: "", password: "" });
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const updateField = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    console.log("Login submitted:", form);
-    // TODO: POST to /api/auth/login once backend exists. That endpoint
-    // verifies credentials and returns a session/token — the setTimeout
-    // below is a placeholder for that real network request.
-    setTimeout(() => {
+    try {
+      const user = await login(email, password);
+      // Route based on role
+      if (user.role === "ADMIN") return navigate("/admin");
+      if (user.role === "AGENT") return navigate("/agent-dashboard");
+      return navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Invalid email or password");
+    } finally {
       setLoading(false);
-      navigate("/");
-    }, 1500);
-  };
-
-  const handleGoogleCredential = (credential) => {
-    console.log("Google credential received:", credential);
-    // TODO: POST this credential to /api/auth/google once backend exists.
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
+    <div className="min-h-screen flex flex-col">
       <AuthHeader />
-
-      <main className="flex-grow flex items-center justify-center pt-24 pb-16 px-margin-mobile">
-        <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] p-8 md:p-10 border border-outline-variant/30">
+      <main className="flex-grow flex items-center justify-center px-margin-mobile py-stack-lg">
+        <div className="w-full max-w-[480px] bg-white rounded-xl property-shadow p-8 md:p-12">
           <div className="text-center mb-stack-lg">
-            <h1 className="font-headline-md text-headline-md text-primary mb-2">Welcome Back</h1>
+            <h1 className="font-headline-md text-headline-md text-on-surface mb-2">
+              Welcome Back
+            </h1>
             <p className="font-body-md text-body-md text-on-surface-variant">
-              Log in to manage your properties and saved favorites.
+              Sign in to your KCEE account
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-stack-md">
-            <div className="space-y-1">
-              <label htmlFor="identity" className="font-label-md text-label-md text-on-surface-variant">
-                Phone Number or Email
+          {error && (
+            <div className="mb-4 p-3 bg-error-container rounded-lg flex items-center gap-2">
+              <Icon name="error" className="text-error text-sm" />
+              <p className="text-error text-sm font-label-md">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block font-label-md text-label-md text-on-surface mb-2">
+                Email Address
               </label>
-              <input
-                id="identity"
-                type="text"
-                placeholder="Enter your email or phone"
-                value={form.identity}
-                onChange={updateField("identity")}
-                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
-              />
+              <div className="relative">
+                <Icon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@email.com"
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label htmlFor="password" className="font-label-md text-label-md text-on-surface-variant">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={updateField("password")}
-                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
-              />
-              <div className="flex justify-end">
-                <Link to="/forgot-password" className="text-primary font-label-md hover:underline">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="font-label-md text-label-md text-on-surface">Password</label>
+                <Link to="/forgot-password" className="text-primary font-label-md text-sm hover:underline">
                   Forgot Password?
                 </Link>
+              </div>
+              <div className="relative">
+                <Icon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                />
               </div>
             </div>
 
@@ -98,40 +94,20 @@ export default function LoginPage() {
               type="submit"
               loading={loading}
               loadingLabel="Signing in..."
-              className="w-full py-4 bg-primary text-on-primary font-bold rounded-full text-body-lg hover:bg-primary-container active:scale-[0.98] transition-all duration-150 mt-stack-md disabled:opacity-80"
+              className="w-full py-4 bg-primary text-on-primary font-label-md font-bold rounded-full hover:opacity-90 transition-all"
             >
               Log In
             </LoadingButton>
           </form>
 
-          <div className="relative my-8 flex items-center">
-            <div className="flex-grow border-t border-outline-variant" />
-            <span className="flex-shrink mx-4 text-on-surface-variant font-label-md text-label-md">
-              or log in with
-            </span>
-            <div className="flex-grow border-t border-outline-variant" />
-          </div>
-
-          <div className="flex gap-4 mb-stack-lg">
-            <div className="flex-1">
-              <GoogleSignInButton onCredential={handleGoogleCredential} />
-            </div>
-            <div className="flex-1">
-              <FacebookSignInButton />
-            </div>
-          </div>
-
-          <div className="text-center">
-            <p className="font-body-md text-on-surface-variant">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-primary font-bold hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </div>
+          <p className="text-center font-body-md text-on-surface-variant mt-6">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-primary font-bold hover:underline">
+              Sign Up
+            </Link>
+          </p>
         </div>
       </main>
-
       <AuthFooter />
     </div>
   );

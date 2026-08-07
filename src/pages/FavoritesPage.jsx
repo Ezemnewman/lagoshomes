@@ -1,83 +1,112 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import DashboardTopbar from "../components/DashboardTopbar";
-import PropertyCard from "../components/PropertyCard";
 import Icon from "../components/Icon";
-import { useFavorites } from "../context/FavoritesContext";
-import { DASHBOARD_USER, SEED_FAVORITE_PROPERTIES } from "../data/properties";
+import api from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
-/**
- * Real shared favorites, not a fixed demo list — this page renders
- * whatever's actually in FavoritesContext. The Stitch export's "click
- * heart to remove, with a shrink/fade animation" UX is preserved via
- * PropertyCard's own favorite button, which now writes to the same
- * context this page reads from: unfavoriting a card here removes it
- * from this list immediately, and the reverse is true everywhere else
- * PropertyCard appears (Home, Search, Agent Profile, Dashboard
- * Overview).
- *
- * Seeds the context with 3 demo favorites on first mount ONLY if
- * favorites is empty, purely so this page isn't blank for demo
- * purposes. A real backend would instead hydrate the context from
- * GET /api/favorites on login — this seeding logic gets deleted
- * entirely once that exists.
- *
- * Known limitation: `hasSeeded` is a ref scoped to this component
- * instance, so if someone removes every favorite and then navigates
- * away and back, this page re-seeds the demo set on remount. Harmless
- * for a demo, but worth knowing — it goes away entirely once real
- * persisted favorites replace this seeding logic.
- */
 export default function FavoritesPage() {
-  const { favorites, toggleFavorite } = useFavorites();
-  const hasSeeded = useRef(false);
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [removingId, setRemovingId] = useState(null);
+
+  const dashboardUser = user ? {
+    name: user.fullName,
+    tier: "Premium Member",
+    initials: user.fullName?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(),
+    avatarUrl: user.avatarUrl,
+  } : { name: "...", tier: "", initials: "?" };
 
   useEffect(() => {
-    if (!hasSeeded.current && favorites.length === 0) {
-      hasSeeded.current = true;
-      SEED_FAVORITE_PROPERTIES.forEach((property) => toggleFavorite(property));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const fetch = async () => {
+      try {
+        const data = await api.get("/favorites");
+        setFavorites(data.favorites || []);
+      } catch {}
+      finally { setLoading(false); }
+    };
+    fetch();
   }, []);
+
+  const handleRemove = async (listingId) => {
+    setRemovingId(listingId);
+    try {
+      await api.post(`/favorites/${listingId}`); // toggles off
+      setTimeout(() => {
+        setFavorites((prev) => prev.filter((l) => l.id !== listingId));
+        setRemovingId(null);
+      }, 300);
+    } catch { setRemovingId(null); }
+  };
 
   return (
     <div className="ml-64 min-h-screen">
-      <DashboardTopbar searchPlaceholder="Search your favorites..." user={DASHBOARD_USER} />
+      <DashboardTopbar searchPlaceholder="Search favorites..." user={dashboardUser} />
 
-      <main className="pt-24 pb-12 px-8 max-w-7xl mx-auto">
-        <header className="mb-stack-lg flex justify-between items-end">
-          <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface">
-              Your Favorite Properties
-            </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant">
-              Manage and review the listings you've saved for your next home.
-            </p>
-          </div>
-          <button className="flex items-center gap-2 border-2 border-primary text-primary px-4 py-2 rounded-full font-label-md text-label-md hover:bg-primary/5 transition-colors">
-            <Icon name="share" className="text-sm" />
-            Share List
-          </button>
-        </header>
+      <main className="pt-24 pb-12 px-8 max-w-4xl mx-auto">
+        <h2 className="font-headline-md text-headline-md text-primary mb-2">Saved Properties</h2>
+        <p className="text-on-surface-variant mb-8">Properties you've saved for later.</p>
 
-        {favorites.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-            {favorites.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-surface-container rounded-xl h-40 animate-pulse" />
             ))}
           </div>
+        ) : favorites.length === 0 ? (
+          <div className="text-center py-16 text-on-surface-variant">
+            <Icon name="favorite_border" className="text-[64px] opacity-20 mb-4" />
+            <p className="font-headline-sm">No saved properties yet</p>
+            <p className="text-sm mt-2 mb-6">Click the heart icon on any listing to save it here.</p>
+            <Link to="/buy" className="bg-primary text-white px-8 py-3 rounded-full font-label-md hover:opacity-90">
+              Browse Listings
+            </Link>
+          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Icon name="heart_broken" className="text-6xl text-outline-variant mb-4" />
-            <h3 className="font-headline-md text-headline-md text-on-surface">No favorites yet</h3>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-sm">
-              Start exploring properties and click the heart icon to save the ones you love.
-            </p>
-            <a
-              href="/buy"
-              className="mt-6 bg-primary text-on-primary px-8 py-3 rounded-full font-label-md text-label-md hover:bg-primary-container transition-all"
-            >
-              Explore Properties
-            </a>
+          <div className="space-y-4">
+            {favorites.map((listing) => (
+              <div key={listing.id}
+                className="bg-white rounded-xl property-shadow flex overflow-hidden border border-outline-variant/20 transition-all"
+                style={removingId === listing.id ? { opacity: 0.4, transform: "translateX(20px)" } : undefined}>
+                <div className="w-40 h-32 flex-shrink-0">
+                  <img src={listing.photos?.[0] || "https://via.placeholder.com/160x128?text=No+Photo"}
+                    alt={listing.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 p-4 flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-primary">₦{Number(listing.price).toLocaleString("en-NG")}</p>
+                    <p className="font-label-md font-bold text-on-surface">{listing.title}</p>
+                    <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                      <Icon name="location_on" className="text-xs" />
+                      {listing.lga}, {listing.state}
+                    </p>
+                    <div className="flex gap-3 mt-2">
+                      {listing.bedrooms != null && (
+                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <Icon name="bed" className="text-xs" />{listing.bedrooms} Beds
+                        </span>
+                      )}
+                      {listing.bathrooms != null && (
+                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <Icon name="bathtub" className="text-xs" />{listing.bathrooms} Baths
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    <Link to={`/listing/${listing.id}`}
+                      className="px-3 py-1.5 border border-primary text-primary text-xs rounded-full hover:bg-primary/5">
+                      View
+                    </Link>
+                    <button onClick={() => handleRemove(listing.id)}
+                      className="px-3 py-1.5 border border-error text-error text-xs rounded-full hover:bg-error/5">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>

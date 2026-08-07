@@ -1,35 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "../components/Icon";
-
-const DEMO_AGENTS = [
-  { id: "a1", name: "Emeka Okafor", email: "emeka@mail.com", phone: "08012345678", agency: "Prime Realty", status: "pending", submitted: "Jun 29, 2026", listings: 0 },
-  { id: "a2", name: "Amaka Nwosu", email: "amaka@mail.com", phone: "09098765432", agency: "Amaka Properties", status: "pending", submitted: "Jun 28, 2026", listings: 0 },
-  { id: "a3", name: "Tunde Bakare", email: "tunde@mail.com", phone: "08011112222", agency: "Prime Lagos Realty", status: "approved", submitted: "Jun 01, 2026", listings: 18 },
-  { id: "a4", name: "Bola Adeyemi", email: "bola@mail.com", phone: "07033334444", agency: "Adeyemi Homes", status: "approved", submitted: "May 15, 2026", listings: 7 },
-  { id: "a5", name: "Kemi Olu", email: "kemi@mail.com", phone: "08055556666", agency: "Kemi Properties", status: "rejected", submitted: "Jun 20, 2026", listings: 0 },
-];
+import api from "../utils/api";
 
 const STATUS_BADGE = {
-  pending: "bg-secondary/10 text-secondary",
-  approved: "bg-primary/10 text-primary",
-  rejected: "bg-error/10 text-error",
+  PENDING: "bg-secondary/10 text-secondary",
+  APPROVED: "bg-primary/10 text-primary",
+  REJECTED: "bg-error/10 text-error",
+  SUSPENDED: "bg-surface-container-high text-on-surface-variant",
 };
 
 export default function AdminAgentsPage() {
-  const [agents, setAgents] = useState(DEMO_AGENTS);
-  const [search, setSearch] = useState("");
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [updating, setUpdating] = useState(null);
 
-  const updateStatus = (id, status) => {
-    setAgents((prev) => prev.map((a) => a.id === id ? { ...a, status } : a));
-    // TODO: PATCH /api/admin/agents/:id/status once backend exists
+  const fetchAgents = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: 50 });
+      if (filter !== "all") params.set("status", filter.toUpperCase());
+      const data = await api.get(`/agents?${params}`);
+      setAgents(data.agents || []);
+    } catch { setAgents([]); }
+    finally { setLoading(false); }
   };
 
-  const filtered = agents.filter((a) => {
-    const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || a.agency.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || a.status === filter;
-    return matchSearch && matchFilter;
-  });
+  useEffect(() => { fetchAgents(); }, [filter]);
+
+  const updateStatus = async (id, status) => {
+    setUpdating(id);
+    try {
+      await api.patch(`/agents/${id}/status`, { status });
+      setAgents((prev) =>
+        prev.map((a) => a.id === id
+          ? { ...a, agentProfile: { ...a.agentProfile, status } }
+          : a
+        )
+      );
+    } catch (err) {
+      alert(err.message || "Failed to update agent status");
+    } finally { setUpdating(null); }
+  };
+
+  const filtered = agents.filter((a) =>
+    a.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+    a.agentProfile?.agencyName?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-8 space-y-6">
@@ -41,17 +59,16 @@ export default function AdminAgentsPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-          <input
-            type="text"
-            placeholder="Search agents or agencies..."
-            value={search}
+          <input type="text" placeholder="Search agents or agencies..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-          />
+            className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
         </div>
         <div className="flex gap-2">
-          {["all", "pending", "approved", "rejected"].map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-full font-label-md text-label-md capitalize ${filter === s ? "bg-primary text-white" : "bg-surface-container text-on-surface-variant hover:bg-surface-variant"}`}>
+          {["all", "pending", "approved", "rejected", "suspended"].map((s) => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-full font-label-md text-sm capitalize whitespace-nowrap transition-colors ${
+                filter === s ? "bg-primary text-white" : "bg-surface-container text-on-surface-variant hover:bg-surface-variant"
+              }`}>
               {s}
             </button>
           ))}
@@ -59,54 +76,91 @@ export default function AdminAgentsPage() {
       </div>
 
       <div className="bg-white rounded-xl property-shadow overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
-            <tr>
-              {["Agent", "Agency", "Submitted", "Listings", "Status", "Actions"].map((h) => (
-                <th key={h} className="px-6 py-4 font-semibold">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-outline-variant/30">
-            {filtered.map((agent) => (
-              <tr key={agent.id} className="hover:bg-surface-container/50 transition-colors">
-                <td className="px-6 py-4">
-                  <p className="font-bold text-on-surface">{agent.name}</p>
-                  <p className="text-xs text-on-surface-variant">{agent.email}</p>
-                </td>
-                <td className="px-6 py-4 text-on-surface-variant">{agent.agency}</td>
-                <td className="px-6 py-4 text-on-surface-variant text-sm">{agent.submitted}</td>
-                <td className="px-6 py-4 text-on-surface-variant">{agent.listings}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold capitalize ${STATUS_BADGE[agent.status]}`}>
-                    {agent.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    {agent.status === "pending" && (
-                      <>
-                        <button onClick={() => updateStatus(agent.id, "approved")} className="px-3 py-1.5 bg-primary text-white text-xs rounded-full hover:opacity-90 transition-all">Approve</button>
-                        <button onClick={() => updateStatus(agent.id, "rejected")} className="px-3 py-1.5 bg-error text-white text-xs rounded-full hover:opacity-90 transition-all">Reject</button>
-                      </>
-                    )}
-                    {agent.status === "approved" && (
-                      <button onClick={() => updateStatus(agent.id, "rejected")} className="px-3 py-1.5 border border-error text-error text-xs rounded-full hover:bg-error/5 transition-all">Suspend</button>
-                    )}
-                    {agent.status === "rejected" && (
-                      <button onClick={() => updateStatus(agent.id, "approved")} className="px-3 py-1.5 border border-primary text-primary text-xs rounded-full hover:bg-primary/5 transition-all">Reinstate</button>
-                    )}
-                  </div>
-                </td>
-              </tr>
+        {loading ? (
+          <div className="p-8 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-12 bg-surface-container rounded animate-pulse" />
             ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-on-surface-variant">
-            <Icon name="search_off" className="text-[40px] opacity-30 mb-2" />
-            <p>No agents match your search.</p>
           </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-surface-container-low text-on-surface-variant font-label-md text-xs uppercase tracking-wider">
+              <tr>
+                {["Agent", "Agency", "Email", "Listings", "Status", "Actions"].map((h) => (
+                  <th key={h} className="px-6 py-4 font-semibold">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/30">
+              {filtered.map((agent) => {
+                const status = agent.agentProfile?.status || "PENDING";
+                return (
+                  <tr key={agent.id} className="hover:bg-surface-container/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-on-surface text-sm">{agent.fullName}</p>
+                      <p className="text-xs text-on-surface-variant">{agent.phone}</p>
+                    </td>
+                    <td className="px-6 py-4 text-on-surface-variant text-sm">
+                      {agent.agentProfile?.agencyName || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-on-surface-variant text-sm">{agent.email}</td>
+                    <td className="px-6 py-4 text-on-surface-variant text-sm">
+                      {agent.agentProfile?.totalListings || 0}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold capitalize ${STATUS_BADGE[status] || STATUS_BADGE.PENDING}`}>
+                        {status.toLowerCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {status === "PENDING" && (
+                          <>
+                            <button
+                              onClick={() => updateStatus(agent.id, "APPROVED")}
+                              disabled={updating === agent.id}
+                              className="px-3 py-1 bg-primary text-white text-xs rounded-full hover:opacity-90 disabled:opacity-50">
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateStatus(agent.id, "REJECTED")}
+                              disabled={updating === agent.id}
+                              className="px-3 py-1 bg-error text-white text-xs rounded-full hover:opacity-90 disabled:opacity-50">
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {status === "APPROVED" && (
+                          <button
+                            onClick={() => updateStatus(agent.id, "SUSPENDED")}
+                            disabled={updating === agent.id}
+                            className="px-3 py-1 border border-error text-error text-xs rounded-full hover:bg-error/5 disabled:opacity-50">
+                            Suspend
+                          </button>
+                        )}
+                        {(status === "REJECTED" || status === "SUSPENDED") && (
+                          <button
+                            onClick={() => updateStatus(agent.id, "APPROVED")}
+                            disabled={updating === agent.id}
+                            className="px-3 py-1 border border-primary text-primary text-xs rounded-full hover:bg-primary/5 disabled:opacity-50">
+                            Reinstate
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-on-surface-variant">
+                    <Icon name="search_off" className="text-[40px] opacity-20 mb-2" />
+                    <p>No agents found.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

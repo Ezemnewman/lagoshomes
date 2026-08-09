@@ -45,9 +45,8 @@ export default function SignupPage() {
         email: form.email,
         phone: form.phone,
         password: form.password,
-        role,
+        role, // "BUYER" or "AGENT"
       });
-      // Navigate to phone verification, carrying role for post-verify routing
       navigate("/verify-phone", { state: { role, phone: form.phone } });
     } catch (err) {
       setError(err.message || "Registration failed — please try again");
@@ -61,7 +60,7 @@ export default function SignupPage() {
       <AuthHeader />
       <main className="flex-grow flex items-center justify-center px-margin-mobile py-stack-lg">
         <div className="w-full max-w-[520px] bg-white rounded-xl property-shadow p-8 md:p-12">
-          <div className="text-center mb-stack-lg">
+          <div className="text-center mb-6">
             <h1 className="font-headline-md text-headline-md text-on-surface mb-2">
               Create Your Account
             </h1>
@@ -70,6 +69,9 @@ export default function SignupPage() {
             </p>
           </div>
 
+          {/* Role selector — onChange receives "BUYER" or "AGENT" */}
+          <RoleSelector role={role} onChange={setRole} />
+
           {error && (
             <div className="mb-4 p-3 bg-error-container rounded-lg flex items-center gap-2">
               <Icon name="error" className="text-error text-sm" />
@@ -77,23 +79,16 @@ export default function SignupPage() {
             </div>
           )}
 
-          <RoleSelector role={role} onChange={setRole} />
-
-          <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block font-label-md text-label-md text-on-surface mb-2">
                 Full Name <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <Icon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                  type="text"
-                  required
-                  value={form.fullName}
-                  onChange={updateField("fullName")}
+                <input type="text" required value={form.fullName} onChange={updateField("fullName")}
                   placeholder="Your full name"
-                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
 
@@ -103,14 +98,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Icon name="call" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                  type="tel"
-                  required
-                  value={form.phone}
-                  onChange={updateField("phone")}
+                <input type="tel" required value={form.phone} onChange={updateField("phone")}
                   placeholder="+234 800 000 0000"
-                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
 
@@ -120,14 +110,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Icon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={updateField("email")}
+                <input type="email" required value={form.email} onChange={updateField("email")}
                   placeholder="name@email.com"
-                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
 
@@ -137,14 +122,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Icon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                  type="password"
-                  required
-                  value={form.password}
-                  onChange={updateField("password")}
+                <input type="password" required value={form.password} onChange={updateField("password")}
                   placeholder="Min 8 characters, 1 uppercase, 1 number"
-                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
 
@@ -154,24 +134,15 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Icon name="verified_user" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                  type="password"
-                  required
-                  value={form.confirmPassword}
-                  onChange={updateField("confirmPassword")}
+                <input type="password" required value={form.confirmPassword} onChange={updateField("confirmPassword")}
                   placeholder="Repeat your password"
-                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
+                  className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.agreedToTerms}
-                onChange={updateField("agreedToTerms")}
-                className="w-4 h-4 mt-1 rounded text-primary focus:ring-primary border-outline"
-              />
+              <input type="checkbox" checked={form.agreedToTerms} onChange={updateField("agreedToTerms")}
+                className="w-4 h-4 mt-1 rounded text-primary focus:ring-primary border-outline" />
               <span className="font-body-md text-body-md text-on-surface-variant text-sm">
                 I agree to the{" "}
                 <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
@@ -180,21 +151,15 @@ export default function SignupPage() {
               </span>
             </label>
 
-            <LoadingButton
-              type="submit"
-              loading={loading}
-              loadingLabel="Creating account..."
-              className="w-full py-4 bg-primary text-on-primary font-label-md font-bold rounded-full hover:opacity-90 transition-all mt-2"
-            >
+            <LoadingButton type="submit" loading={loading} loadingLabel="Creating account..."
+              className="w-full py-4 bg-primary text-on-primary font-label-md font-bold rounded-full hover:opacity-90 transition-all mt-2">
               Create Account
             </LoadingButton>
           </form>
 
           <p className="text-center font-body-md text-on-surface-variant mt-6">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary font-bold hover:underline">
-              Log In
-            </Link>
+            <Link to="/login" className="text-primary font-bold hover:underline">Log In</Link>
           </p>
         </div>
       </main>

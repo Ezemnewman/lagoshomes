@@ -1,35 +1,55 @@
-import Icon from "./Icon";
-
 /**
- * Two-tab role picker (Buyer vs Agent/Landlord). The Stitch export
- * used a global switchRole() function manually toggling classList on
- * two hardcoded button IDs — here it's controlled state passed down,
- * so SignupPage decides what role means for routing after submit
- * instead of the toggle living disconnected from the rest of the form.
+ * Role selector used on the signup page.
+ * `role` must be "BUYER" or "AGENT" — matching the backend enum exactly.
+ * `onChange` receives the new role string when a button is clicked.
  */
-const ROLES = [
-  { id: "buyer", icon: "home", label: "I'm Looking for a Property" },
-  { id: "agent", icon: "real_estate_agent", label: "I'm an Agent/Landlord" },
-];
+export default function RoleSelector({ role, onChange }) {
+  const options = [
+    {
+      value: "BUYER",
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+      ),
+      label: "I'm Looking for a Property",
+      sub: "Buyer / Renter",
+    },
+    {
+      value: "AGENT",
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+          <circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/>
+        </svg>
+      ),
+      label: "I'm an Agent/Landlord",
+      sub: "List & sell properties",
+    },
+  ];
 
-export default function RoleSelector({ value, onChange }) {
   return (
-    <div className="flex p-1 bg-surface-container rounded-lg mb-stack-lg relative overflow-hidden">
-      {ROLES.map((role) => {
-        const isActive = value === role.id;
+    <div className="grid grid-cols-2 gap-3 mb-6">
+      {options.map((opt) => {
+        const selected = role === opt.value;
         return (
           <button
-            key={role.id}
+            key={opt.value}
             type="button"
-            onClick={() => onChange(role.id)}
-            className={`flex-1 py-3 px-2 rounded-md font-label-md text-label-md transition-all duration-300 z-10 flex flex-col items-center gap-1 ${
-              isActive
-                ? "bg-white text-primary shadow-[0px_2px_8px_rgba(0,0,0,0.08)]"
-                : "text-on-surface-variant"
+            onClick={() => onChange(opt.value)}
+            className={`flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all text-center cursor-pointer ${
+              selected
+                ? "border-primary bg-primary/5 text-primary shadow-sm"
+                : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:bg-surface-container"
             }`}
           >
-            <Icon name={role.icon} className="text-xl" />
-            <span className="text-center leading-tight">{role.label}</span>
+            <span className={selected ? "text-primary" : "text-on-surface-variant"}>
+              {opt.icon}
+            </span>
+            <span className="font-label-md text-label-md font-bold leading-tight">{opt.label}</span>
+            <span className="text-xs opacity-70">{opt.sub}</span>
           </button>
         );
       })}

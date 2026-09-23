@@ -5,20 +5,6 @@ import Navbar from "../components/Navbar";
 import Icon from "../components/Icon";
 import { SEARCH_RESULTS_PROPERTIES } from "../data/properties";
 
-/**
- * The API key must be in .env as VITE_GOOGLE_MAPS_API_KEY.
- * See .env.example for setup instructions (same Google Cloud
- * Console project as the OAuth key setup).
- *
- * When the key is missing, the map panel shows a clear placeholder
- * instead of crashing — same pattern as GoogleSignInButton.
- *
- * Demo property coordinates are approximate Lagos locations.
- * Real coordinates will come from GET /api/listings which will
- * include lat/lng fields from the listing creation form's
- * location step once the backend exists.
- */
-
 const DEMO_MAP_CENTER = { lat: 6.4281, lng: 3.4219 }; // Lagos
 
 const DEMO_PINS = [
